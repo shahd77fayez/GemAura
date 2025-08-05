@@ -1,6 +1,6 @@
-# A Flutter Multi-Assistance Health App that demonstrates the power of on-device, offline, multimodal AI using the flutter_gemma package. This app Empowering the visually impaired, allergy sufferers, and Alzheimer's patients with real-time, on-device AI assistance from a local Gemma-3n without an internet connection.
+# A Flutter Multi-Assistance Health App GemAura
 
-A new Flutter project.
+that demonstrates the power of on-device, offline, multimodal AI using the flutter_gemma package. This app Empowering the visually impaired, allergy sufferers, and Alzheimer's patients with real-time, on-device AI assistance from a local Gemma-3n without an internet connection.
 
 ## Getting Started
 
@@ -14,4 +14,5 @@ A few resources to get you started if this is your first Flutter project:
 For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
+
 
