@@ -17,7 +17,7 @@ This project was built as a proof-of-concept for my Kaggle Writeup, which detail
 * Alzheimer's Helper: recalling important memories and daily information. Through natural conversation
 
 app overview
-![Alt Text](images/image_intillizer_home.jpg)
+![Alt Text](images/home_screen_intilization.jpg)
 
 blind assist feature
 ![Alt Text](images/blind_assist_feature.jpg)
@@ -43,6 +43,7 @@ To run this project locally, follow these steps:
 ## 🔗 Reference Links
 - [Google AI Edge](https://github.com/google-ai-edge/gallery)
 - [Hugging face Mode](https://huggingface.co/google/gemma-3n-E4B-it-litert-preview)
+
 
 
 
