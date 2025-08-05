@@ -12,6 +12,9 @@ This project was built as a proof-of-concept for my Kaggle Writeup, which detail
 * Offline First: The entire AI interaction happens on-device, with no internet connection required.
 * Multimodal Input: Understands audio, text, and images, with significantly enhanced video understanding.
 * Powered by Gemma 3N: Utilizes Google's lightweight and powerful Gemma 3N model.
+* Blind assist: vital tool for the visually impaired. Users can simply open the camera and, using voice commands
+* Allergy Checker: Helps users make informed and safe decisions about their food. By scanning a product's label take picture and detect aganist potential allergens
+* Alzheimer's Helper: recalling important memories and daily information. Through natural conversation
 
 This project is a starting point for a Flutter application.
 
@@ -23,6 +26,7 @@ A few resources to get you started if this is your first Flutter project:
 For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
+
 
 
 
