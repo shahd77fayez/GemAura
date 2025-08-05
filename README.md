@@ -7,7 +7,7 @@ that demonstrates the power of on-device, offline, multimodal AI using the flutt
 This project was built as a proof-of-concept for my Kaggle Writeup, which details the entire journey and implementation. [gemaura-a-flutter-multi-assistance-health-app-Writeup ](https://www.kaggle.com/competitions/google-gemma-3n-hackathon/writeups/gemaura-a-flutter-multi-assistance-health-app-with)
 
 
-## Features
+## 🚀 Features
 
 * Offline First: The entire AI interaction happens on-device, with no internet connection required.
 * Multimodal Input: Understands audio, text, and images, with significantly enhanced video understanding.
@@ -16,21 +16,22 @@ This project was built as a proof-of-concept for my Kaggle Writeup, which detail
 * Allergy Checker: Helps users make informed and safe decisions about their food. By scanning a product's label take picture and detect aganist potential allergens
 * Alzheimer's Helper: recalling important memories and daily information. Through natural conversation
 
-## Getting Started
+## 📦 Getting Started
 
 To run this project locally, follow these steps:
 - Download the latest APK from [GitHub Releases] and transfer it to your Android device.
 
-## Technology Highlights
+## 💡 Technology Highlights
 - flutter_gemma: The core package for running Gemma models on-device.
 - LiteRT: Lightweight runtime for optimized model execution.
 - LLM Inference API: Powering on-device Large Language Models.
 - Hugging Face Integration: For model discovery and download.
 
 
-## Reference Links
+## 🔗 Reference Links
 - [Google AI Edge](https://github.com/google-ai-edge/gallery)
 - [Hugging face Mode](https://huggingface.co/google/gemma-3n-E4B-it-litert-preview)
+
 
 
 
