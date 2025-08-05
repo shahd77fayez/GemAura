@@ -19,7 +19,7 @@ This project was built as a proof-of-concept for my Kaggle Writeup, which detail
 ## 📦 Getting Started
 
 To run this project locally, follow these steps:
-- Download the latest APK from [GitHub Releases] and transfer it to your Android device.
+- Download the latest APK from [GitHub Releases]() and transfer it to your Android device.
 
 ## 💡 Technology Highlights
 - flutter_gemma: The core package for running Gemma models on-device.
@@ -31,6 +31,7 @@ To run this project locally, follow these steps:
 ## 🔗 Reference Links
 - [Google AI Edge](https://github.com/google-ai-edge/gallery)
 - [Hugging face Mode](https://huggingface.co/google/gemma-3n-E4B-it-litert-preview)
+
 
 
 
