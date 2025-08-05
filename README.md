@@ -16,6 +16,18 @@ This project was built as a proof-of-concept for my Kaggle Writeup, which detail
 * Allergy Checker: Helps users make informed and safe decisions about their food. By scanning a product's label take picture and detect aganist potential allergens
 * Alzheimer's Helper: recalling important memories and daily information. Through natural conversation
 
+app overview
+![Alt Text](images/image_intillizer_home.jpg)
+
+blind assist feature
+![Alt Text](images/blind_assist_feature.jpg)
+
+alzahimer assist feature
+![Alt Text](images/alzahimer_chat_assist.jpg)
+
+allergy assist feature
+![Alt Text](images/allergy_assist_feature.jpg)
+
 ## 📦 Getting Started
 
 To run this project locally, follow these steps:
@@ -31,6 +43,7 @@ To run this project locally, follow these steps:
 ## 🔗 Reference Links
 - [Google AI Edge](https://github.com/google-ai-edge/gallery)
 - [Hugging face Mode](https://huggingface.co/google/gemma-3n-E4B-it-litert-preview)
+
 
 
 
