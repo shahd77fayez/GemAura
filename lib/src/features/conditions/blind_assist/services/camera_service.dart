@@ -1,5 +1,6 @@
 // lib/src/features/conditions/blind_assist/services/camera_service.dart
 
+import 'dart:async';
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
 
@@ -10,6 +11,7 @@ class CameraService {
   bool get isInitialized => _isInitialized;
   CameraController? get controller => _controller;
 
+
   // This callback will be triggered whenever a new camera frame is available
   void Function(CameraImage)? onImageAvailable;
 
@@ -19,7 +21,7 @@ class CameraService {
     // Retrieve the list of available cameras
     final cameras = await availableCameras();
 
-    // NEW: Add a debug print to see what cameras are found
+    // Add a debug print to see what cameras are found
     if (kDebugMode) { // Use kDebugMode to only run this in debug builds
       print("DEBUG: availableCameras() returned: ${cameras.length} cameras.");
       for (var camera in cameras) {
@@ -57,14 +59,24 @@ class CameraService {
     }
   }
 
-  // Dispose of the controller when not needed to release resources
+  /// Disposes of the camera controller and stops the image stream.
+  /// It's crucial to call this method to free up camera resources.
   Future<void> dispose() async {
+    // Only dispose if the controller has been initialized
+    if (_controller == null || !_isInitialized) {
+      if (kDebugMode) {
+        print("DEBUG: CameraService not initialized, nothing to dispose.");
+      }
+      return;
+    }
+
     _isInitialized = false;
-    await _controller?.stopImageStream();
-    await _controller?.dispose();
+    await _controller!.stopImageStream();
+    await _controller!.dispose();
     _controller = null;
+    onImageAvailable = null; // Clear the callback
     if (kDebugMode) {
-      print("DEBUG: CameraService disposed.");
+      print("DEBUG: CameraService disposed successfully.");
     }
   }
 }

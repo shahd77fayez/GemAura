@@ -8,6 +8,7 @@ import 'package:flutter_gemma/core/message.dart';
 import 'package:flutter_gemma/flutter_gemma.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
+import '../../../../shared/services/model_authenticated.dart';
 import '../constants.dart';
 
 class GemmaService {
@@ -46,19 +47,25 @@ class GemmaService {
     return await File(path).exists();
   }
 
-  Stream<double> downloadModel() {
-    final controller = StreamController<double>();
+  Stream<double> downloadModel({String? authToken}) async* {
     try {
-      _gemma.modelManager.downloadModelFromNetworkWithProgress(GEMMA_MODEL_URL).listen(
-            (progress) => controller.add(progress.toDouble()),
-        onDone: () => controller.close(),
-        onError: (e) => controller.addError("Download failed: $e"),
-      );
+      final path = await _getPath();
+
+      // Use the authenticated download service
+      await for (final progress in AuthenticatedDownloadService.downloadWithAuth(
+        url: GEMMA_MODEL_URL,
+        destinationPath: path,
+        authToken: authToken,
+      )) {
+        yield progress;
+      }
+
+      // After download, set the model path in the Flutter Gemma plugin
+      await _gemma.modelManager.setModelPath(path);
+
     } catch (e) {
-      controller.addError("Error starting download: $e");
-      controller.close();
+      throw Exception("Download failed: $e");
     }
-    return controller.stream;
   }
 
   Future<void> initializeModelFromLocalFile() async {

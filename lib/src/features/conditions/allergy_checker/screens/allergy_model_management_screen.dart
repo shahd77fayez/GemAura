@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:gemma_final_app/src/features/conditions/allergy_checker/services/allergy_gemma_service.dart';
-import 'package:gemma_final_app/src/config/app_router.dart';
 
 class AllergyModelManagementScreen extends StatefulWidget {
   final bool isAutoNavigate;
@@ -22,6 +21,10 @@ class _AllergyModelManagementScreenState extends State<AllergyModelManagementScr
   bool _isProcessing = false;
   String _modelPath = "Initializing...";
   bool _isFileCheckComplete = false;
+  double _downloadProgress = 0.0;
+  bool _isDownloading = false;
+  bool _cancelDownload = false;
+  final TextEditingController _tokenController = TextEditingController();
 
   @override
   void initState() {
@@ -77,7 +80,7 @@ class _AllergyModelManagementScreenState extends State<AllergyModelManagementScr
           _isFileCheckComplete = true;
         });
       }
-    } catch (e, stackTrace) {
+    } catch (e) {
       print("Error during initial status check: $e");
       if (mounted) {
         setState(() {
@@ -107,7 +110,7 @@ class _AllergyModelManagementScreenState extends State<AllergyModelManagementScr
     try {
       await action();
       _showSnackBar("Action successful!");
-    } catch (e, stackTrace) {
+    } catch (e) {
       print("Error during action '$processingMessage': $e");
       _showSnackBar("Error: ${e.toString()}");
       setState(() {
@@ -130,9 +133,65 @@ class _AllergyModelManagementScreenState extends State<AllergyModelManagementScr
 
   Future<void> _copyFromDownloads() async {
     await _handleAction(
-          () => Future.delayed(Duration(seconds: 1)),
+      _gemmaService.copyModelFromDownloads,
       "Copying model from Downloads...",
     );
+  }
+
+  Future<void> _downloadModel() async {
+    if (_isDownloading) return;
+    if(_cancelDownload) return;
+
+    final token = _tokenController.text.trim();
+    if (token.isEmpty) {
+      _showSnackBar("Please enter your Hugging Face token");
+      return;
+    }
+
+    setState(() {
+      _isDownloading = true;
+      _downloadProgress = 0.0;
+      _statusMessage = "Starting download...";
+    });
+
+    try {
+      await for (final progress in _gemmaService.downloadModel(authToken: token)) {
+        if (mounted) {
+          if(_cancelDownload) return;
+          setState(() {
+            _downloadProgress = progress;
+            _statusMessage = "Downloading model: ${(progress * 100).toStringAsFixed(1)}%";
+          });
+        }
+      }
+
+      if (mounted) {
+        _showSnackBar("Model downloaded successfully!");
+        setState(() {
+          _isDownloading = false;
+          _downloadProgress = 0.0;
+        });
+        _checkInitialStatus();
+      }
+    } catch (e) {
+      if (mounted) {
+        _showSnackBar("Download failed: ${e.toString()}");
+        setState(() {
+          _isDownloading = false;
+          _downloadProgress = 0.0;
+          _statusMessage = "Download failed. Please try again.";
+        });
+      }
+    }
+  }
+  void _cancelDownloadAction() {
+    setState(() {
+      _cancelDownload = true;
+      _isDownloading = false;
+      _statusMessage = "Download cancelled.";
+      _downloadProgress = 0.0;
+    });
+    _showSnackBar("Download cancelled.");
   }
 
   @override
@@ -145,11 +204,79 @@ class _AllergyModelManagementScreenState extends State<AllergyModelManagementScr
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(_statusMessage, textAlign: TextAlign.center, style: const TextStyle(fontSize: 18)),
               const SizedBox(height: 20),
+              if (_isDownloading) ...[
+                Center(
+                  child: SizedBox(
+                    width: MediaQuery.of(context).size.width * 0.7,
+                    child: Stack(
+                      alignment: Alignment.centerRight,
+                      children: [
+                        LinearProgressIndicator(value: _downloadProgress),
+                        Container(
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                          child: IconButton(
+                            icon: const Icon(Icons.close, color: Colors.white, size: 16),
+                            onPressed: _cancelDownloadAction,
+                            tooltip: 'Cancel Download',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text("${(_downloadProgress * 100).toStringAsFixed(1)}%", textAlign: TextAlign.center),
+                const SizedBox(height: 20),
+              ],
+              const Text("Download Options:", textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 10),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text("To download the model:", style: TextStyle(fontWeight: FontWeight.bold)),
+                      Text("1. Go to huggingface.co and create an account"),
+                      Text("2. Accept the Gemma license terms"),
+                      Text("3. Generate an access token in Settings"),
+                      Text("4. Enter your token below:"),
+                      SizedBox(height: 8),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _tokenController,
+                decoration: const InputDecoration(
+                  hintText: "hf_xxxxxxxxxxxxxxxxxxxxxxxxx",
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+                obscureText: true,
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton.icon(
+                onPressed: (_isProcessing || _isDownloading) ? null : _downloadModel,
+                icon: const Icon(Icons.download),
+                label: const Text("Download Model"),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton.icon(
+                onPressed: (_isProcessing || _isDownloading) ? null : _copyFromDownloads,
+                icon: const Icon(Icons.file_copy),
+                label: const Text("Copy from Downloads"),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+              ),
               const SizedBox(height: 40),
               const Text("Manual Setup:", textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 10),

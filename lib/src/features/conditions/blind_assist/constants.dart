@@ -7,5 +7,5 @@ List<CameraDescription> cameras = [];
 
 // Gemma Model Constants
 const String GEMMA_MODEL_URL =
-    'https://huggingface.co/google/gemma-3n-E4B-it-litert-preview/resolve/main/gemma.task';
+    'https://huggingface.co/google/gemma-3n-E4B-it-litert-preview/resolve/main/gemma-3n-E4B-it-int4.task';
 const String GEMMA_MODEL_FILENAME = 'gemma.task';

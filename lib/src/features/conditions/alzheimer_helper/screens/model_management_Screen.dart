@@ -4,9 +4,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-// Adjusted imports for the new project structure
 import 'package:gemma_final_app/src/features/conditions/alzheimer_helper/services/alzheimer_gemma_service.dart';
-import 'package:gemma_final_app/src/features/conditions/screens/alzheimer_helper_screen.dart'; // We'll navigate back to this screen
+import 'package:gemma_final_app/src/features/conditions/screens/alzheimer_helper_screen.dart';
 import 'package:gemma_final_app/src/config/app_router.dart';
 
 class AlzheimerModelManagementScreen extends StatefulWidget {
@@ -26,6 +25,10 @@ class _AlzheimerModelManagementScreenState extends State<AlzheimerModelManagemen
   bool _isProcessing = false;
   String _modelPath = "Initializing...";
   bool _isFileCheckComplete = false;
+  bool _isDownloading = false;
+  bool _cancelDownload = false;
+
+  final TextEditingController _tokenController = TextEditingController();
 
   @override
   void initState() {
@@ -50,9 +53,6 @@ class _AlzheimerModelManagementScreenState extends State<AlzheimerModelManagemen
       });
 
       final isInstalled = await _gemmaService.isModelInstalled();
-
-      // NEW: Automatically go back to the previous screen (AlzheimerHelperScreen)
-      // if the model is installed, rather than replacing the route.
       if (widget.isAutoNavigate && isInstalled) {
         if (mounted) {
           Navigator.of(context).pop();
@@ -69,9 +69,7 @@ class _AlzheimerModelManagementScreenState extends State<AlzheimerModelManagemen
           _isFileCheckComplete = true;
         });
       }
-    } catch (e, stackTrace) {
-      print("Error during initial status check: $e");
-      print("Stack Trace: $stackTrace");
+    } catch (e) {
       if (mounted) {
         setState(() {
           _statusMessage = "Error initializing app. Please restart.";
@@ -100,57 +98,80 @@ class _AlzheimerModelManagementScreenState extends State<AlzheimerModelManagemen
 
     try {
       await action();
-    } catch (e, stackTrace) {
-      print("Error during action '$processingMessage': $e");
-      print("Stack Trace: $stackTrace");
+    } catch (e) {
       _showSnackBar("Error: ${e.toString()}");
       setState(() {
         _statusMessage = "An error occurred. Please try again.";
       });
     } finally {
       if (mounted) {
-        setState(() { _isProcessing = false; });
+        setState(() {
+          _isProcessing = false;
+        });
         _checkInitialStatus();
       }
     }
   }
 
   Future<void> _downloadModel() async {
-    if (_isProcessing) return;
+    if (_isDownloading) return;
+
+    final token = _tokenController.text.trim();
+    if (token.isEmpty) {
+      _showSnackBar("Please enter your Hugging Face token");
+      return;
+    }
+
     setState(() {
-      _isProcessing = true;
+      _isDownloading = true;
+      _cancelDownload = false;
       _downloadProgress = 0.0;
       _statusMessage = "Starting download...";
     });
 
-    _gemmaService.downloadModel().listen(
-          (progress) {
+    try {
+      await for (final progress in _gemmaService.downloadModel(authToken: token)) {
+        if (_cancelDownload) {
+          throw Exception("Download cancelled by user.");
+        }
+
         if (mounted) {
+          if(_cancelDownload) return;
           setState(() {
             _downloadProgress = progress;
-            _statusMessage = "Downloading model (${progress.toStringAsFixed(1)}%)...";
+            _statusMessage = "Downloading model: ${(progress * 100).toStringAsFixed(1)}%";
           });
         }
-      },
-      onDone: () {
-        if (mounted) {
-          _showSnackBar("Download complete! Initializing...");
-          _initializeModel();
-        }
-      },
-      onError: (e, stackTrace) {
-        print("Download error: $e");
-        print("Stack Trace: $stackTrace");
-        if (mounted) {
-          _showSnackBar("Download failed: ${e.toString()}");
-          setState(() {
-            _isProcessing = false;
-            _statusMessage = "Download failed. Please try again.";
-          });
-        }
-      },
-      cancelOnError: true,
-    );
+      }
+
+      if (mounted) {
+        _showSnackBar("Model downloaded successfully!");
+        setState(() {
+          _isDownloading = false;
+          _downloadProgress = 0.0;
+        });
+        _checkInitialStatus();
+      }
+    } catch (e) {
+      if (mounted) {
+        _showSnackBar("Download failed: ${e.toString()}");
+        setState(() {
+          _isDownloading = false;
+          _downloadProgress = 0.0;
+          //_statusMessage = "Download failed or cancelled.";
+        });
+      }
+    }
+  }
+
+  void _cancelDownloadAction() {
+    setState(() {
+      _cancelDownload = true;
+      _isDownloading = false;
+      _statusMessage = "Download cancelled.";
+      _downloadProgress = 0.0;
+    });
+    _showSnackBar("Download cancelled.");
   }
 
   Future<void> _initializeModel() async {
@@ -173,25 +194,85 @@ class _AlzheimerModelManagementScreenState extends State<AlzheimerModelManagemen
       appBar: AppBar(title: const Text('Alzheimer AI Model Setup')),
       body: !_isFileCheckComplete
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView( // NEW: Wrap the body in a SingleChildScrollView
+          : SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(_statusMessage, textAlign: TextAlign.center, style: const TextStyle(fontSize: 18)),
               const SizedBox(height: 20),
-              if (_isProcessing && _downloadProgress > 0)
-                LinearProgressIndicator(value: _downloadProgress / 100.0),
-              const SizedBox(height: 20),
+              if (_isDownloading) ...[
+                Center(
+                  child: SizedBox(
+                    width: MediaQuery.of(context).size.width * 0.7,
+                    child: Stack(
+                      alignment: Alignment.centerRight,
+                      children: [
+                        LinearProgressIndicator(value: _downloadProgress),
+                        Container(
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                          child: IconButton(
+                            icon: const Icon(Icons.close, color: Colors.white, size: 16),
+                            onPressed: _cancelDownloadAction,
+                            tooltip: 'Cancel Download',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text("${(_downloadProgress * 100).toStringAsFixed(1)}%", textAlign: TextAlign.center),
+                const SizedBox(height: 20),
+              ],
+              const Text("Download Options:", textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 10),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text("To download the model:", style: TextStyle(fontWeight: FontWeight.bold)),
+                      Text("1. Go to huggingface.co and create an account"),
+                      Text("2. Accept the Gemma license terms"),
+                      Text("3. Generate an access token in Settings"),
+                      Text("4. Enter your token below:"),
+                      SizedBox(height: 8),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _tokenController,
+                decoration: const InputDecoration(
+                  hintText: "hf_xxxxxxxxxxxxxxxxxxxxxxxxx",
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+                obscureText: true,
+              ),
+              const SizedBox(height: 10),
               ElevatedButton.icon(
-                onPressed: _isProcessing ? null : _downloadModel,
+                onPressed: (_isProcessing || _isDownloading) ? null : _downloadModel,
                 icon: const Icon(Icons.download),
-                label: Text(_isProcessing ? "Processing..." : "Download AI Model"),
+                label: const Text("Download Model"),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton.icon(
+                onPressed: (_isProcessing || _isDownloading) ? null : _copyFromDownloads,
+                icon: const Icon(Icons.file_copy),
+                label: const Text("Copy from Downloads"),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
               ),
               const SizedBox(height: 40),
-              const Text("For Manual Setup:", textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text("Manual Setup:", textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 10),
               ListTile(
                 title: const Text("Push 'gemma.task' via ADB to:"),
@@ -204,16 +285,9 @@ class _AlzheimerModelManagementScreenState extends State<AlzheimerModelManagemen
               ),
               const SizedBox(height: 10),
               ElevatedButton.icon(
-                onPressed: _isProcessing ? null : _copyFromDownloads,
-                icon: const Icon(Icons.copy),
-                label: const Text("Copy from Downloads Folder"),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
-              ),
-              const SizedBox(height: 10),
-              ElevatedButton.icon(
                 onPressed: _isProcessing ? null : _initializeModel,
                 icon: const Icon(Icons.play_arrow),
-                label: const Text("Initialize After Push/Copy"),
+                label: const Text("Initialize After Push"),
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
               ),
             ],

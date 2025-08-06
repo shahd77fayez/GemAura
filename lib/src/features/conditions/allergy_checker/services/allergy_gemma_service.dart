@@ -11,6 +11,7 @@ import 'package:path/path.dart' as p;
 import 'package:image/image.dart' as img;
 
 import 'package:gemma_final_app/src/features/conditions/blind_assist/constants.dart';
+import 'package:gemma_final_app/src/shared/services/model_authenticated.dart';
 
 class AllergyGemmaService {
   late final FlutterGemmaPlugin _gemma;
@@ -43,6 +44,43 @@ class AllergyGemmaService {
   Future<bool> doesModelFileExist() async {
     final path = await _getPath();
     return await File(path).exists();
+  }
+
+  Stream<double> downloadModel({String? authToken}) async* {
+    try {
+      final path = await _getPath();
+
+      // Use the authenticated download service
+      await for (final progress in AuthenticatedDownloadService.downloadWithAuth(
+        url: GEMMA_MODEL_URL,
+        destinationPath: path,
+        authToken: authToken,
+      )) {
+        yield progress;
+      }
+
+      // After download, set the model path in the Flutter Gemma plugin
+      await _gemma.modelManager.setModelPath(path);
+
+    } catch (e) {
+      throw Exception("Download failed: $e");
+    }
+  }
+
+  Future<void> copyModelFromDownloads() async {
+    final path = await _getPath();
+    final Directory downloadDir = Directory('/storage/emulated/0/Download');
+    final File externalModelFile = File(p.join(downloadDir.path, GEMMA_MODEL_FILENAME));
+
+    if (!await externalModelFile.exists()) {
+      throw Exception("Model not found in /sdcard/Download folder.");
+    }
+
+    final internalModelFile = File(path);
+    if (await internalModelFile.exists()) {
+      await internalModelFile.delete();
+    }
+    await externalModelFile.copy(internalModelFile.path);
   }
 
   Future<void> initializeModelFromLocalFile() async {

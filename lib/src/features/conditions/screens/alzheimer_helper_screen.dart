@@ -12,6 +12,8 @@ import 'package:gemma_final_app/src/features/conditions/alzheimer_helper/screens
 import 'package:gemma_final_app/src/api/stt_service.dart';
 import 'package:gemma_final_app/src/api/tts_service.dart';
 
+import '../../../config/app_router.dart';
+
 
 class AlzheimerHelperScreen extends StatefulWidget {
   const AlzheimerHelperScreen({super.key});
@@ -65,13 +67,7 @@ class _AlzheimerHelperScreenState extends State<AlzheimerHelperScreen> {
       final isModelInstalled = await _gemmaService!.isModelInstalled();
       if (!isModelInstalled) {
         if (mounted) {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => const AlzheimerModelManagementScreen(),
-            ),
-          ).then((_) {
-            _checkModelStatusOnReturn();
-          });
+          Navigator.pushReplacementNamed(context,AppRouter.modelManagementRoute);
         }
         return;
       }

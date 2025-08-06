@@ -522,6 +522,7 @@ class _AssistScreenState extends State<AssistScreen> {
 
     _assistantResponse.dispose();
     _scrollController.dispose();
+    _cameraService.dispose();
     super.dispose();
   }
 
