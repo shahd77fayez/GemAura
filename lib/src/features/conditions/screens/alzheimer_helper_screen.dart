@@ -67,7 +67,13 @@ class _AlzheimerHelperScreenState extends State<AlzheimerHelperScreen> {
       final isModelInstalled = await _gemmaService!.isModelInstalled();
       if (!isModelInstalled) {
         if (mounted) {
-          Navigator.pushReplacementNamed(context,AppRouter.modelManagementRoute);
+         Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => const AlzheimerModelManagementScreen(),
+            ),
+          ).then((_) {
+            _checkModelStatusOnReturn();
+          });
         }
         return;
       }
@@ -258,4 +264,5 @@ class _AlzheimerHelperScreenState extends State<AlzheimerHelperScreen> {
       ),
     );
   }
+
 }
